@@ -39,9 +39,11 @@ namespace ProMP
                       Eigen::Ref<Eigen::ArrayXd> phase_jerk);
 
             void rollout();
+            inline void get_rollout(MatrixVector& rollout) {rollout = rollout_;}
             void reset();
             
-            inline void get_centers(Eigen::VectorXd& centers_vec)
+            
+            inline void get_centers(Eigen::VectorXd& center_vec)
             {
                 center_vec = center_vec_;
             }
@@ -63,13 +65,13 @@ namespace ProMP
                 width_ = width;
             }
 
-            inline void set_num_basis(double num_basis)
+            inline void set_num_basis(int num_basis)
             {
                 assert(num_basis > 1);
                 num_basis_ = num_basis;
             }
 
-            inline void get_num_basis(double& num_basis)
+            inline void get_num_basis(int& num_basis)
             {
                 num_basis = num_basis_;
             }
