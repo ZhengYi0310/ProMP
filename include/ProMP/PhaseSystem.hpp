@@ -25,20 +25,21 @@ namespace ProMP
         public:
             EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-            PhaseSystem(int num_basis=100, double width = 0.05, const double goal_t, const double start_t); // : num_basis_(num_basis), overlap_(overlap), z_(0.0)
+            PhaseSystem(int num_basis=100, double width = 0.05, int traj_timesteps); // : num_basis_(num_basis), overlap_(overlap), z_(0.0)
 
             ~PhaseSystem() {}
 
-            void init()
+            void init();
             void eval(Eigen::Ref<Eigen::ArrayXd> phase);
-            void eval_derivative(Eigen::Ref<Eigen::MatrixXd> phase_dot);
-            void eval_jerk(Eigen::Ref<Eigen::MatrixXd> phase_jerk);
+            void eval_d(Eigen::Ref<Eigen::ArrayXd> phase_dot, const Eigen::Ref<const Eigen::ArrayXd> phase);
+            void eval_ddd(Eigen::Ref<Eigen::ArrayXd> phase_jerk, const Eigen::Ref<const Eigen::ArrayXd> phase);
 
-            void step(Eigen::Ref<Eigen::MatrixXd> phase, 
-                      Eigen::Ref<Eigen::MatrixXd> phase_dot, 
-                      Eigen::Ref<Eigen::MatrixXd> phase_jerk);
+            void step(Eigen::Ref<Eigen::ArrayXd> phase, 
+                      Eigen::Ref<Eigen::ArrayXd> phase_dot, 
+                      Eigen::Ref<Eigen::ArrayXd> phase_jerk);
 
-            void rollout()
+            void rollout();
+            void reset();
             
             inline void get_centers(Eigen::VectorXd& centers_vec)
             {
@@ -62,6 +63,17 @@ namespace ProMP
                 width_ = width;
             }
 
+            inline void set_num_basis(double num_basis)
+            {
+                assert(num_basis > 1);
+                num_basis_ = num_basis;
+            }
+
+            inline void get_num_basis(double& num_basis)
+            {
+                num_basis = num_basis_;
+            }
+
             inline void temoral_scaling(int scale)
             {
                 assert(scale > 0);
@@ -70,15 +82,19 @@ namespace ProMP
 
         private:
             bool execute_;
-
             int num_basis_;
-            double overlap_;
 
-            double traj_duration_;
+            double traj_timesteps_;
+            double rollout_steps_;
             double z_;
             double z_dot_;
 
             Eigen::VectorXd center_vec_;
+
+            Eigen::ArrayXd phase_prealloc_;
+            Eigen::ArrayXd phase_dot_prealloc_;
+            Eigen::ArrayXd phase_jerk_prealloc_;
+            Eigen::ArrayXXd phase_terms_;
             
             double width_;     
 
