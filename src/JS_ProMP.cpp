@@ -20,7 +20,7 @@ using namespace std;
 
 namespace ProMP
 {
-    JS_ProMP::JS_ProMP(int num_basis, double width, double regular_coeff, int num_joints, int traj_timesteps) : phase_system_(num_basis, width, traj_timesteps), regular_coeff_(regular_coeff), num_joints_(num_joints), traj_timesteps_(traj_timesteps)
+    JS_ProMP::JS_ProMP(int num_basis, double width, double regular_coeff, int num_joints, int traj_timesteps, double traj_dt) : phase_system_(num_basis, width, traj_timesteps), regular_coeff_(regular_coeff), num_joints_(num_joints), traj_timesteps_(traj_timesteps), traj_dt_(traj_dt)
     {
         phase_system_.init();
         this->get_rollout_steps(rollout_steps_);
@@ -31,7 +31,7 @@ namespace ProMP
         PHI_                    = Eigen::MatrixXd::Zero(2 * num_joints_ * rollout_steps_, num_joints_ * num_basis_);
     }
 
-    void JS_ProMP::add_demonstraion(Eigen::MatrixXd demo) 
+    void JS_ProMP::AddDemo(Eigen::MatrixXd demo) 
     {
         assert(demo.rows() == 2 * num_joints_); // need to provide the vlocity vector 
         if (demo.cols()!= traj_timesteps_)
@@ -81,6 +81,14 @@ namespace ProMP
 
         W_prior_mean_ = W_prior_mean_samples_.colwise().sum() / Y_.size();
         W_prior_covar_ = (Y_.size() * W_prior_covar_ + lambda_W_ * Eigen::MatrixXd::Identity(num_basis_ * num_joints_, num_basis_ * num_joints_)) / (Y_.size() + regular_coeff_);
+    }
+
+    void JS_ProMP::AddViaPoints(double t, Eigen::VectorXd y, Eigen::MatrixXd y_covar)
+    {
+        Via_Points_.via_points_time_ind.push_back(t);
+        int ind = Via_Points_.via_points_time_ind.size();
+        Via_Points_.obs_covar_map[ind] = y_covar;
+        Via_Points_.obs_map[ind] = y;
     }
 }
 
