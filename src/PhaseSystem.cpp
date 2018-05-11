@@ -64,7 +64,7 @@ namespace ProMP
     // evaluate the third derivative (jerk) of the phase 
     void PhaseSystem::eval_ddd(Eigen::Ref<Eigen::ArrayXd> phase_jerk, const Eigen::Ref<const Eigen::ArrayXd> phase)
     {
-        phase_jerk = phase * ((z_ - center_vec_.array() / width_).pow(2) - 1 / width_);
+        phase_jerk = phase * (((z_ - center_vec_.array()) / width_).pow(2) - 1 / width_);
         phase_jerk /= phase_jerk.sum();
     }
 
@@ -93,7 +93,7 @@ namespace ProMP
     {
         if (execute_ == true)
         {
-            while (z_ <= 1)
+            while (z_ <= rollout_steps_)
             {
                 
                 step(phase_prealloc_, phase_dot_prealloc_, phase_jerk_prealloc_);

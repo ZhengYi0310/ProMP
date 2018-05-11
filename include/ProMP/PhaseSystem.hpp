@@ -62,6 +62,7 @@ namespace ProMP
 
             inline void set_width(double width)
             {
+                assert(width > 0);
                 width_ = width;
             }
 
@@ -80,6 +81,11 @@ namespace ProMP
             {
                 assert(scale > 0);
                 z_dot_ = z_dot_ * scale;
+            }
+
+            inline void get_rollout_steps(double& rollout_steps)
+            {
+                rollout_steps = rollout_steps_;
             }
 
         private:
