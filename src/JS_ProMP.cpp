@@ -87,8 +87,27 @@ namespace ProMP
     {
         Via_Points_.via_points_time_ind.push_back(t);
         int ind = Via_Points_.via_points_time_ind.size();
+        assert(y.rows() == 2);
+        assert(y.cols() == num_joints_);
+        assert(y_covar.rows() == num_joints_);
+        assert(y_covar.cols() == num_joints_);
         Via_Points_.obs_covar_map[ind] = y_covar;
         Via_Points_.obs_map[ind] = y;
     }
+
+    void JS_ProMP::rollout(double randomness)
+    {
+        for (int i = 0; i < Via_Points_.via_points_time_ind.size(); i++)
+        {
+            // conditioning
+            Eigen::MatrixXd phi_t =  PHI_.block(2 * num_joints_ * i/* timestamp */, 0, 2 * num_joints_, num_basis_ * num_joints_);
+
+            Eigen::MatrixXd L =  W_prior_covar_conditioned_ * phi_t.transpose() * (Via_Points_.obs_covar_map[i] + phi_t * W_prior_covar_conditioned_ * phi_t.transpose()); 
+            W_prior_mean_conditioned_ = W_prior_mean_conditioned_ + L * (Via_Points_.obs_map[i] - phi_t.transpose() * W_prior_mean_conditioned_);
+            W_prior_covar_conditioned_ = W_prior_covar_conditioned_ - L * phi_t * W_prior_mean_conditioned_;
+        }
+    }
+
+
 }
 

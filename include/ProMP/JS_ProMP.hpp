@@ -90,6 +90,13 @@ namespace ProMP
                 double step_ind = time_ind / traj_dt_;
                 get_std_(step_ind, std);
             }
+
+            inline void clear_via_points()
+            {
+                Via_Points_.via_points_time_ind.clear();
+                Via_Points_.obs_covar_map.clear();
+                Via_Points_.obs_map.clear();
+            }
             /** Add a demonstration trajectory with timestamps T and joints number N to the system 
              * /param demo, a Matrix represents the trajectory (N * 2, T)
              */
@@ -97,6 +104,7 @@ namespace ProMP
             void L2Regression();
             void BuildDesignMatrix();
             void AddViaPoints(double t, Eigen::VectorXd y, Eigen::MatrixXd y_covar);
+            void rollout(double randomness = 1e-10);
 
         
         private:
@@ -108,7 +116,9 @@ namespace ProMP
             Eigen::MatrixXd X_;
             Eigen::VectorXd W_prior_mean_;
             Eigen::MatrixXd W_prior_mean_samples_;
-            Eigen::VectorXd W_prior_covar_;
+            Eigen::MatrixXd W_prior_covar_;
+            Eigen::VectorXd W_prior_mean_conditioned_;
+            Eigen::MatrixXd W_prior_covar_conditioned_;
 
             struct ViaPoints
             {
