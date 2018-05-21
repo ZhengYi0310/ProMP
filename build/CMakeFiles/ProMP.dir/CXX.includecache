@@ -1,0 +1,42 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+../include/ProMP/PhaseSystem.hpp
+eigen3/Eigen/Core
+-
+eigen3/Eigen/LU
+-
+eigen3/Eigen/Dense
+-
+eigen3/Eigen/StdVector
+-
+eigen3/Eigen/Geometry
+-
+
+/home/yzheng/PycharmProjects/ProMP/src/PhaseSystem.cpp
+iostream
+-
+string
+-
+vector
+-
+set
+-
+map
+-
+algorithm
+-
+cmath
+-
+cassert
+-
+stdexcept
+-
+ProMP/PhaseSystem.hpp
+-
+

@@ -25,7 +25,7 @@ namespace ProMP
         public:
             EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-            PhaseSystem(int num_basis=100, double width = 0.05, int traj_timesteps); // : num_basis_(num_basis), overlap_(overlap), z_(0.0)
+            PhaseSystem(double traj_timesteps, double num_basis=100, double width = 0.05); // : num_basis_(num_basis), overlap_(overlap), z_(0.0)
 
             ~PhaseSystem() {}
 
@@ -88,10 +88,14 @@ namespace ProMP
                 rollout_steps = rollout_steps_;
             }
 
+            inline bool can_execute()
+            {
+                return execute_;
+            }
+
         private:
             bool execute_;
-            int num_basis_;
-
+            double num_basis_;
             double traj_timesteps_;
             double rollout_steps_;
             double z_;
