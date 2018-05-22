@@ -22,9 +22,7 @@ namespace ProMP
 {
     JS_ProMP::JS_ProMP(double regular_coeff, int num_joints, double traj_timesteps, double traj_dt, int num_basis, double width) : phase_system_(traj_timesteps, num_basis, width), regular_coeff_(regular_coeff), num_joints_(num_joints), traj_timesteps_(traj_timesteps), traj_dt_(traj_dt)
     {
-        phase_system_.init();
-        this->get_rollout_steps(rollout_steps_);
-        this->get_num_basis(num_basis_);
+        
 
         
         Mu_W_      = Eigen::VectorXd::Zero(num_basis_ * num_joints_); 
@@ -34,6 +32,13 @@ namespace ProMP
         
 
         MG_ = Eigen::EigenMultivariateNormal<double>(Eigen::VectorXd::Zero(2 * num_joints_), Eigen::MatrixXd::Identity(2 * num_joints_, 2 * num_joints_)); 
+    }
+
+    void JS_ProMP::init()
+    {
+        phase_system_.init();
+        this->get_rollout_steps(rollout_steps_);
+        this->get_num_basis(num_basis_);
     }
 
     void JS_ProMP::AddDemo(Eigen::ArrayXXd demo) 

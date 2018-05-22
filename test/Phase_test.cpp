@@ -19,7 +19,7 @@
 using namespace std;
 using namespace ProMP;
 using namespace matplotlibcpp;
-
+/*
 TEST_CASE("Phase system can be successfully initialized.", "[Phase_System]")
 {
     PhaseSystem test_phase_sys1(100, 100, 0.02);
@@ -209,10 +209,10 @@ TEST_CASE("Phase system rolls out.", "[Phase_System]")
     } 
 }
 
-
+*/
 TEST_CASE("results plotting", "[Phase_system]")
 {
-    PhaseSystem test_phase_sys(100, 30, 0.5);
+    PhaseSystem test_phase_sys(100, 30, 0.04);
     test_phase_sys.init();
     std::vector<double> z_vec;
         
@@ -229,7 +229,7 @@ TEST_CASE("results plotting", "[Phase_system]")
     test_phase_sys.get_num_basis(num_basis);
     test_phase_sys.get_rollout(rollout);
     test_phase_sys.get_centers(centers_vec);
-
+    /*
     SECTION("rollout dimension is correct")
     {
         REQUIRE(rollout.size() == rollout_steps);
@@ -239,60 +239,14 @@ TEST_CASE("results plotting", "[Phase_system]")
             REQUIRE(rollout[i].rows() == num_basis);
         }
     }
-
+    */
+    
     SECTION("plot out the phase value")
     {
         Eigen::MatrixXd Basis_mat;
         std::vector<std::vector<double> > Basis_vec;
         Basis_mat.resize(num_basis, rollout_steps);
-        /*
-        for (int i = 0; i < centers_vec.rows(); i++)
-        {
-            cout << centers_vec.row(i) << std::endl;
-        }
-        */
 
-        for (int i = 0; i < rollout.size(); i++)
-        {
-            Basis_mat.col(i) = rollout[i].col(2);  
-        }
-
-        for (int i = 0; i < num_basis; i++)
-        {   
-            std::vector<double> temp;
-            for (int j = 0; j < Basis_mat.cols(); j++)
-            {
-                temp.push_back(Basis_mat(i, j));
-            } 
-            Basis_vec.push_back(temp);
-            matplotlibcpp::plot(z_vec, Basis_vec[i]);
-        }
-        matplotlibcpp::show();
-    }
-
-    SECTION("after rescaling")
-    {
-        test_phase_sys.temporal_scaling(0.3);
-        test_phase_sys.reset();
-        test_phase_sys.rollout();
-        test_phase_sys.get_rollout_steps(rollout_steps);
-        test_phase_sys.get_num_basis(num_basis);
-        test_phase_sys.get_rollout(rollout);
-        test_phase_sys.get_centers(centers_vec);
-        test_phase_sys.get_phase_values(z_vec);
-
-        cout << z_vec.size() << endl;
-        REQUIRE(z_vec.size() == rollout_steps);
-        REQUIRE(rollout.size() == rollout_steps);
-        REQUIRE(num_basis == 31);
-        for (int i = 0; i < rollout.size(); i++)
-        {
-            REQUIRE(rollout[i].rows() == num_basis);
-        }
-
-        Eigen::MatrixXd Basis_mat;
-        std::vector<std::vector<double> > Basis_vec;
-        Basis_mat.resize(num_basis, rollout_steps);
 
         for (int i = 0; i < rollout.size(); i++)
         {
@@ -311,9 +265,55 @@ TEST_CASE("results plotting", "[Phase_system]")
         }
         matplotlibcpp::show();
     }
+    
+    
+    SECTION("after rescaling")
+    {
+        test_phase_sys.temporal_scaling(2.532);
+        test_phase_sys.reset();
+        test_phase_sys.rollout();
+        test_phase_sys.get_rollout_steps(rollout_steps);
+        test_phase_sys.get_num_basis(num_basis);
+        test_phase_sys.get_rollout(rollout);
+        test_phase_sys.get_centers(centers_vec);
+        test_phase_sys.get_phase_values(z_vec);
+
+        //cout << z_vec.size() << endl;
+        //REQUIRE(z_vec.size() == rollout_steps);
+        REQUIRE(rollout.size() == z_vec.size());
+        
+        REQUIRE(num_basis == 31);
+        for (int i = 0; i < rollout.size(); i++)
+        {
+            REQUIRE(rollout[i].rows() == num_basis);
+        }
+        
+        Eigen::MatrixXd Basis_mat;
+        std::vector<std::vector<double> > Basis_vec;
+        Basis_mat.resize(num_basis, rollout.size());
+
+        for (int i = 0; i < rollout.size(); i++)
+        {
+            Basis_mat.col(i) = rollout[i].col(1);  
+        }
+
+        for (int i = 0; i < num_basis; i++)
+        {   
+            std::vector<double> temp;
+            for (int j = 0; j < Basis_mat.cols(); j++)
+            {
+                temp.push_back(Basis_mat(i, j));
+            } 
+            Basis_vec.push_back(temp);
+            matplotlibcpp::plot(z_vec, Basis_vec[i]);
+        }
+        matplotlibcpp::show();
+        
+    }
+    
 
     Eigen::MatrixXd test;
-    cout << test.rows() << " " << test.cols() << endl;
+    //cout << test.rows() << " " << test.cols() << endl;
 }
 
 

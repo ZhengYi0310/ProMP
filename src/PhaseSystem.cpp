@@ -87,12 +87,27 @@ namespace ProMP
         eval(phase);
         eval_d(phase_dot, phase);
         eval_ddd(phase_jerk, phase);
+        
+       
+        // Normalize everything
+        double p = phase.sum();
+        double pd = phase_dot.sum();
+        double pdd = phase_jerk.sum();
+
+        phase_jerk = phase_jerk / p - 2 * phase_dot * pd / std::pow(p, 2) - phase * pdd / std::pow(p, 2) + 2 * phase * std::pow(pd, 2) / std::pow(p, 3);  
+        phase_dot = (phase_dot * phase.sum() - phase * phase_dot.sum()) / std::pow(p, 2);
+        phase = phase / phase.sum();
+
+        // Multiply with z_, z_dot_ 
+        phase_dot = phase_dot * z_dot_;
+        phase_jerk = phase_jerk * (pow(z_dot_, 2));
         z_vecs_.push_back(z_);    
     }
     
     void PhaseSystem::reset()
     {
         rollout_steps_ = std::floor(traj_timesteps_ / z_dot_);
+ 
         z_ = 0;
         //std::cout << rollout_steps_ << std::endl;
         //center_vec_.resize(num_basis_ + 1);
@@ -110,9 +125,10 @@ namespace ProMP
     void PhaseSystem::rollout()
     {
         //std::cout << rollout_steps_ << std::endl;
+
         if (execute_ == true)
         {
-            while (z_ <= 1.0)
+            while (z_ < 1.0)
             {
                 //cout << z_ << endl; 
                 step(phase_prealloc_, phase_dot_prealloc_, phase_jerk_prealloc_);

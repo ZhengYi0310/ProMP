@@ -109,6 +109,7 @@ namespace ProMP
 
         
         private:
+            void init();
             PhaseSystem phase_system_;
             Eigen::MatrixXd PHI_;
             Eigen::MatrixXd phi_t_;
