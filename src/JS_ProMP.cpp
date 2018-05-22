@@ -20,18 +20,23 @@ using namespace std;
 
 namespace ProMP
 {
-    JS_ProMP::JS_ProMP(int num_basis, double width, double regular_coeff, int num_joints, int traj_timesteps, double traj_dt) : phase_system_(num_basis, width, traj_timesteps), regular_coeff_(regular_coeff), num_joints_(num_joints), traj_timesteps_(traj_timesteps), traj_dt_(traj_dt)
+    JS_ProMP::JS_ProMP(double regular_coeff, int num_joints, double traj_timesteps, double traj_dt, int num_basis, double width) : phase_system_(traj_timesteps, num_basis, width), regular_coeff_(regular_coeff), num_joints_(num_joints), traj_timesteps_(traj_timesteps), traj_dt_(traj_dt)
     {
         phase_system_.init();
         this->get_rollout_steps(rollout_steps_);
         this->get_num_basis(num_basis_);
-        W_prior_mean_           = Eigen::VectorXd::Zero(num_basis_ * num_joints_);
-        W_prior_mean_samples_   = Eigen::MatrixXd::Zero(num_basis_ * num_joints, traj_timesteps_);
-        W_prior_covar_          = Eigen::MatrixXd::Zero(num_basis_ * num_joints, num_basis_ * num_joints);
-        PHI_                    = Eigen::MatrixXd::Zero(2 * num_joints_ * rollout_steps_, num_joints_ * num_basis_);
+
+        
+        Mu_W_      = Eigen::VectorXd::Zero(num_basis_ * num_joints_); 
+        Sigma_W_   = Eigen::MatrixXd::Zero(num_basis_ * num_joints, num_basis_ * num_joints);
+        PHI_       = Eigen::MatrixXd::Zero(2 * num_joints_ * rollout_steps_, num_joints_ * num_basis_);
+        phi_t_     = Eigen::MatrixXd::Zero(2 * num_joints_, num_joints_ * num_basis_); 
+        
+
+        MG_ = Eigen::EigenMultivariateNormal<double>(Eigen::VectorXd::Zero(2 * num_joints_), Eigen::MatrixXd::Identity(2 * num_joints_, 2 * num_joints_)); 
     }
 
-    void JS_ProMP::AddDemo(Eigen::MatrixXd demo) 
+    void JS_ProMP::AddDemo(Eigen::ArrayXXd demo) 
     {
         assert(demo.rows() == 2 * num_joints_); // need to provide the vlocity vector 
         if (demo.cols()!= traj_timesteps_)
@@ -40,7 +45,6 @@ namespace ProMP
             demo = demo.block(0, 0, 2, traj_timesteps_);
         }
         
-        demo.resize(demo.size(), 1);
         Y_.push_back(demo);
     }
 
@@ -62,9 +66,19 @@ namespace ProMP
 
     void JS_ProMP::L2Regression()
     {
-        // Make sure the demo dimensionality is the same as PHI_ 
+        // Make sure the Y_ has more than one demos 
+        if (Y_.size() <= 1)
+        {
+            std::stringstream ss;
+            ss << Y_.size() << " demos provided! (need more than 1 demo)"<< std::endl;
+            throw std::runtime_error(ss.str()) ;
+        }
+
+        Eigen::MatrixXd Mu_W_samples(num_basis_ * num_joints_, Y_.size());
+       
         for (int i = 0; i < Y_.size(); i++)
         {
+             // Make sure the demo dimensionality is the same as PHI_ 
             if (PHI_.rows() != Y_[i].size())
             {
                 std::stringstream ss;
@@ -74,13 +88,21 @@ namespace ProMP
 
             else 
             { 
-                W_prior_mean_samples_.col(i) += (PHI_.transpose() * PHI_ + regular_coeff_ * TAU_.transpose() * TAU_).inverse() * PHI_.transpose() * Y_[i];
-                W_prior_covar_ += W_prior_mean_samples_ * W_prior_mean_samples_.transpose();
+                Mu_W_samples.col(i) = (PHI_.transpose() * PHI_ + regular_coeff_ * TAU_.transpose() * TAU_).inverse() * PHI_.transpose() * Y_[i].matrix();
+               
             }
         }
+        
+        // compute mean of thw weights 
+        Mu_W_ = Mu_W_samples.colwise().sum() / Y_.size();
 
-        W_prior_mean_ = W_prior_mean_samples_.colwise().sum() / Y_.size();
-        W_prior_covar_ = (Y_.size() * W_prior_covar_ + lambda_W_ * Eigen::MatrixXd::Identity(num_basis_ * num_joints_, num_basis_ * num_joints_)) / (Y_.size() + regular_coeff_);
+        // compute covariance of the weights 
+        for (int i = 0; i < Y_.size(); i++)
+        {
+            Sigma_W_ += (Mu_W_samples.col(i) - Mu_W_) * (Mu_W_samples.col(i) - Mu_W_).transpose(); 
+        }
+        // based on inverse-wishart ditribution for the prior of Sigma_W
+        Sigma_W_ = (Y_.size() * Sigma_W_ + lambda_W_ * Eigen::MatrixXd::Identity(num_basis_ * num_joints_, num_basis_ * num_joints_)) / (Y_.size() + regular_coeff_);
     }
 
     void JS_ProMP::AddViaPoints(double t, Eigen::VectorXd y, Eigen::MatrixXd y_covar)
@@ -95,19 +117,23 @@ namespace ProMP
         Via_Points_.obs_map[ind] = y;
     }
 
-    void JS_ProMP::rollout(double randomness)
+    void JS_ProMP::rollout()
     {
-        for (int i = 0; i < Via_Points_.via_points_time_ind.size(); i++)
+        // Rollout the learned ProMP 
+        for (int i = 0; i < phase_rollout_.size(); i++)
         {
-            // conditioning
-            Eigen::MatrixXd phi_t =  PHI_.block(2 * num_joints_ * i/* timestamp */, 0, 2 * num_joints_, num_basis_ * num_joints_);
-
-            Eigen::MatrixXd L =  W_prior_covar_conditioned_ * phi_t.transpose() * (Via_Points_.obs_covar_map[i] + phi_t * W_prior_covar_conditioned_ * phi_t.transpose()); 
-            W_prior_mean_conditioned_ = W_prior_mean_conditioned_ + L * (Via_Points_.obs_map[i] - phi_t.transpose() * W_prior_mean_conditioned_);
-            W_prior_covar_conditioned_ = W_prior_covar_conditioned_ - L * phi_t * W_prior_mean_conditioned_;
+            this->step(i);
         }
+        Y_rollout_vec_.push_back(Y_rollout_);
+        Y_rollout_ = Eigen::MatrixXd::Zero(2 * num_joints_, rollout_steps_);
     }
 
-
+    void JS_ProMP::step(int step_ind)
+    {
+        phi_t_ = PHI_.block(2 * num_joints_ * step_ind, 0, 2 * num_joints_, num_basis_ * num_joints_); 
+        MG_.setMean(phi_t_ * Mu_W_);
+        MG_.setCovar(phi_t_ * Sigma_W_ * phi_t_.transpose()); // + prior y;
+        Y_rollout_.col(step_ind) = MG_.samples(1);
+    }
 }
 

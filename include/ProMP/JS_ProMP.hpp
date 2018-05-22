@@ -24,7 +24,7 @@ namespace ProMP
         public:
             EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-            JS_ProMP(int num_basis=100, double width = 0.05, double regular_coeff, int num_joints, int traj_timesteps, double traj_dt);
+            JS_ProMP(double regular_coeff, int num_joints, double traj_timesteps, double traj_dt, int num_basis=100, double width = 0.05);
 
             ~JS_ProMP() {}
 
@@ -100,25 +100,30 @@ namespace ProMP
             /** Add a demonstration trajectory with timestamps T and joints number N to the system 
              * /param demo, a Matrix represents the trajectory (N * 2, T)
              */
-            void AddDemo(Eigen::MatrixXd demo);
+            void AddDemo(Eigen::ArrayXXd demo);
             void L2Regression();
             void BuildDesignMatrix();
             void AddViaPoints(double t, Eigen::VectorXd y, Eigen::MatrixXd y_covar);
-            void rollout(double randomness = 1e-10);
+            void rollout();
+            void step(int step_ind);
 
         
         private:
             PhaseSystem phase_system_;
             Eigen::MatrixXd PHI_;
+            Eigen::MatrixXd phi_t_;
             Eigen::MatrixXd TAU_; // used to store the jerk
             MatrixVector Y_; // stl container for training examples, each example should contain 2 * traj_timesteps_ points. 
             MatrixVector phase_rollout_;
             Eigen::MatrixXd X_;
-            Eigen::VectorXd W_prior_mean_;
-            Eigen::MatrixXd W_prior_mean_samples_;
-            Eigen::MatrixXd W_prior_covar_;
-            Eigen::VectorXd W_prior_mean_conditioned_;
-            Eigen::MatrixXd W_prior_covar_conditioned_;
+            Eigen::VectorXd Mu_W_;
+            //Eigen::MatrixXd W_prior_mean_samples_;
+            Eigen::MatrixXd Sigma_W_;
+            Eigen::VectorXd Mu_W_cond_;
+            Eigen::MatrixXd Sigma_W_cond_;
+
+            Eigen::MatrixXd Y_rollout_;
+            std::vector<Eigen::MatrixXd, Eigen::aligned_allocator<Eigen::MatrixXd> > Y_rollout_vec_;
 
             struct ViaPoints
             {
@@ -138,7 +143,7 @@ namespace ProMP
             double traj_timesteps_;
             double rollout_steps_;
             ViaPoints Via_Points_;
-            std::shared_pointer<Eigen::EigenMultivariateNormal> MG_;
+            Eigen::EigenMultivariateNormal<double> MG_;
 
             /** Get the mean value for the specific time_steps
              *

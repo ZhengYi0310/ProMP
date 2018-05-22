@@ -311,6 +311,9 @@ TEST_CASE("results plotting", "[Phase_system]")
         }
         matplotlibcpp::show();
     }
+
+    Eigen::MatrixXd test;
+    cout << test.rows() << " " << test.cols() << endl;
 }
 
 

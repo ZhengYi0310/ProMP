@@ -77,14 +77,17 @@ namespace ProMP
                            Eigen::Ref<Eigen::ArrayXd> phase_dot,
                            Eigen::Ref<Eigen::ArrayXd> phase_jerk)
     {
-        if (!execute_)
-            throw std::runtime_error("The phase system should not be execuing a step right now!");
+        if (z_ < 1)
+        {
+            z_ = z_ + 1.0 / rollout_steps_;
+        }
+        else 
+            z_ = z_;
+
         eval(phase);
         eval_d(phase_dot, phase);
         eval_ddd(phase_jerk, phase);
-        z_vecs_.push_back(z_);
-        z_ = z_ + 1.0 / rollout_steps_;
-        
+        z_vecs_.push_back(z_);    
     }
     
     void PhaseSystem::reset()
