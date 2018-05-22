@@ -25,7 +25,7 @@ namespace ProMP
         execute_ = false;
         rollout_steps_ = std::floor(traj_timesteps_ / z_dot_);
         center_vec_.resize(num_basis_ + 1);
-        rollout_.resize(rollout_steps_);
+        
     }
     
     /**Generate the vector for the phase system
@@ -53,7 +53,8 @@ namespace ProMP
     void PhaseSystem::eval(Eigen::Ref<Eigen::ArrayXd> phase)
     {
         phase = ((z_ - center_vec_.array()).pow(2) / (-2 * width_)).exp();
-        phase /= phase.sum();
+        //cout << phase(0) << endl;
+        //phase /= phase.sum();
     }
 
     // evaluate the derivative of the phase 
@@ -61,7 +62,7 @@ namespace ProMP
     {
         phase_dot = phase * (z_ - center_vec_.array()) / width_ * -1;
         //phase_dot /=  phase_dot.sum();
-        phase_dot /= phase.sum();
+        //phase_dot /= phase.sum();
     }
 
     // evaluate the third derivative (jerk) of the phase 
@@ -69,7 +70,7 @@ namespace ProMP
     {
         phase_jerk = phase * (((z_ - center_vec_.array()) / width_).pow(2) - 1 / width_);
         //phase_jerk /= phase_jerk.sum();
-        phase_jerk /= phase.sum();
+        //phase_jerk /= phase.sum();
     }
 
     void PhaseSystem::step(Eigen::Ref<Eigen::ArrayXd> phase,
@@ -81,38 +82,50 @@ namespace ProMP
         eval(phase);
         eval_d(phase_dot, phase);
         eval_ddd(phase_jerk, phase);
-
-        z_ = z_ + z_dot_ / rollout_steps_;
+        z_vecs_.push_back(z_);
+        z_ = z_ + 1.0 / rollout_steps_;
+        
     }
     
     void PhaseSystem::reset()
     {
-        execute_ = false;
         rollout_steps_ = std::floor(traj_timesteps_ / z_dot_);
-        center_vec_.resize(num_basis_ + 1);
-        rollout_.resize(rollout_steps_);
-        init();
+        z_ = 0;
+        //std::cout << rollout_steps_ << std::endl;
+        //center_vec_.resize(num_basis_ + 1);
+       
+        z_vecs_.clear();
+        rollout_.clear();
+
+        phase_prealloc_ = Eigen::ArrayXd::Zero(num_basis_);
+        phase_dot_prealloc_ = Eigen::ArrayXd::Zero(num_basis_);
+        phase_jerk_prealloc_ = Eigen::ArrayXd::Zero(num_basis_);
+        phase_terms_ = Eigen::ArrayXXd::Zero(num_basis_, 3);
+        execute_ = true;
     }
 
     void PhaseSystem::rollout()
     {
+        //std::cout << rollout_steps_ << std::endl;
         if (execute_ == true)
         {
-            while (z_ <= 1)
+            while (z_ <= 1.0)
             {
-                
+                //cout << z_ << endl; 
                 step(phase_prealloc_, phase_dot_prealloc_, phase_jerk_prealloc_);
                 phase_terms_.col(0) = phase_prealloc_;
                 phase_terms_.col(1) = phase_dot_prealloc_;
-                phase_terms_.col(2) = phase_jerk_prealloc_;
-                rollout_.push_back(Eigen::Map<Eigen::MatrixXd>(phase_terms_.data(), 3, num_basis_));
+                phase_terms_.col(2) = phase_jerk_prealloc_; 
+                rollout_.push_back(phase_terms_);
             }
         }
         else 
             throw std::runtime_error("The phase system should not be rolling out right now!"); 
 
+        //std::cout << rollout_.size() << " " << rollout_[1].cols() << " " << rollout_[1].rows() << std::endl;
+
         execute_ = false;
-        reset();
+        //reset();
     }   
 }
 

@@ -15,8 +15,10 @@
 #include <cassert>
 #include <ProMP/PhaseSystem.hpp>
 #include "catch/catch.hpp"
+#include "matplotlib-cpp/matplotlibcpp.h"
 using namespace std;
 using namespace ProMP;
+using namespace matplotlibcpp;
 
 TEST_CASE("Phase system can be successfully initialized.", "[Phase_System]")
 {
@@ -146,31 +148,168 @@ TEST_CASE("Phase system rolls out.", "[Phase_System]")
         double num_basis = 100;
         PhaseSystem test_phase_sys(100, num_basis, 0.02);
         test_phase_sys.init();
+        std::vector<double> z_vec;
+        
         test_phase_sys.rollout();
+
+        test_phase_sys.get_phase_values(z_vec);
+        REQUIRE(z_vec.size() == 100);
+        
+        
+        
+
+        test_phase_sys.temporal_scaling(0.5);
+        test_phase_sys.reset();
+        test_phase_sys.rollout();
+        test_phase_sys.get_phase_values(z_vec);
+        REQUIRE(z_vec.size() == 200);
+
+        test_phase_sys.temporal_scaling(8);
+        test_phase_sys.reset();
+        test_phase_sys.rollout();
+        test_phase_sys.get_phase_values(z_vec);
+        REQUIRE(z_vec.size() == 25);
+
+        test_phase_sys.temporal_scaling(0.25);
+        test_phase_sys.reset();
+        test_phase_sys.rollout();
+        test_phase_sys.get_phase_values(z_vec);
+        REQUIRE(z_vec.size() == 100);
     }
 
     SECTION("case 2")
     {
         double num_basis = 50;
-        PhaseSystem test_phase_sys(300, num_basis, 0.02);
+        PhaseSystem test_phase_sys(500, num_basis, 0.02);
         test_phase_sys.init();
         test_phase_sys.rollout();
+        std::vector<double> z_vec;
+        test_phase_sys.get_phase_values(z_vec);
+        REQUIRE(z_vec.size() == 500);
+        MatrixVector rollout;
+        test_phase_sys.get_rollout(rollout);
+
+        test_phase_sys.temporal_scaling(0.3);
+        test_phase_sys.reset();
+        test_phase_sys.rollout();
+        test_phase_sys.get_phase_values(z_vec);
+        REQUIRE(z_vec.size() == 1666);
+
+        test_phase_sys.temporal_scaling(10);
+        test_phase_sys.reset();
+        test_phase_sys.rollout();
+        test_phase_sys.get_phase_values(z_vec);
+        REQUIRE(z_vec.size() == 167);
+
+        test_phase_sys.temporal_scaling(1.0 / 3.0);
+        test_phase_sys.reset();
+        test_phase_sys.rollout();
+        test_phase_sys.get_phase_values(z_vec);
+        REQUIRE(z_vec.size() == 500);
+    } 
+}
+
+
+TEST_CASE("results plotting", "[Phase_system]")
+{
+    PhaseSystem test_phase_sys(100, 30, 0.5);
+    test_phase_sys.init();
+    std::vector<double> z_vec;
+        
+    test_phase_sys.rollout();
+
+    test_phase_sys.get_phase_values(z_vec);
+    REQUIRE(z_vec.size() == 100);
+    
+    MatrixVector rollout;
+    Eigen::VectorXd centers_vec;
+    double rollout_steps; 
+    int num_basis;
+    test_phase_sys.get_rollout_steps(rollout_steps);
+    test_phase_sys.get_num_basis(num_basis);
+    test_phase_sys.get_rollout(rollout);
+    test_phase_sys.get_centers(centers_vec);
+
+    SECTION("rollout dimension is correct")
+    {
+        REQUIRE(rollout.size() == rollout_steps);
+        REQUIRE(num_basis == 31);
+        for (int i = 0; i < rollout.size(); i++)
+        {
+            REQUIRE(rollout[i].rows() == num_basis);
+        }
     }
 
-    SECTION("case 2")
+    SECTION("plot out the phase value")
     {
-        double num_basis = 30;
-        PhaseSystem test_phase_sys(320, num_basis, 0.02);
-        test_phase_sys.init();
-        test_phase_sys.rollout();
+        Eigen::MatrixXd Basis_mat;
+        std::vector<std::vector<double> > Basis_vec;
+        Basis_mat.resize(num_basis, rollout_steps);
+        /*
+        for (int i = 0; i < centers_vec.rows(); i++)
+        {
+            cout << centers_vec.row(i) << std::endl;
+        }
+        */
+
+        for (int i = 0; i < rollout.size(); i++)
+        {
+            Basis_mat.col(i) = rollout[i].col(2);  
+        }
+
+        for (int i = 0; i < num_basis; i++)
+        {   
+            std::vector<double> temp;
+            for (int j = 0; j < Basis_mat.cols(); j++)
+            {
+                temp.push_back(Basis_mat(i, j));
+            } 
+            Basis_vec.push_back(temp);
+            matplotlibcpp::plot(z_vec, Basis_vec[i]);
+        }
+        matplotlibcpp::show();
     }
 
-    SECTION("case 3")
+    SECTION("after rescaling")
     {
-        double num_basis = 32;
-        PhaseSystem test_phase_sys(320, num_basis, 0.02);
-        test_phase_sys.init();
+        test_phase_sys.temporal_scaling(0.3);
+        test_phase_sys.reset();
         test_phase_sys.rollout();
+        test_phase_sys.get_rollout_steps(rollout_steps);
+        test_phase_sys.get_num_basis(num_basis);
+        test_phase_sys.get_rollout(rollout);
+        test_phase_sys.get_centers(centers_vec);
+        test_phase_sys.get_phase_values(z_vec);
+
+        cout << z_vec.size() << endl;
+        REQUIRE(z_vec.size() == rollout_steps);
+        REQUIRE(rollout.size() == rollout_steps);
+        REQUIRE(num_basis == 31);
+        for (int i = 0; i < rollout.size(); i++)
+        {
+            REQUIRE(rollout[i].rows() == num_basis);
+        }
+
+        Eigen::MatrixXd Basis_mat;
+        std::vector<std::vector<double> > Basis_vec;
+        Basis_mat.resize(num_basis, rollout_steps);
+
+        for (int i = 0; i < rollout.size(); i++)
+        {
+            Basis_mat.col(i) = rollout[i].col(1);  
+        }
+
+        for (int i = 0; i < num_basis; i++)
+        {   
+            std::vector<double> temp;
+            for (int j = 0; j < Basis_mat.cols(); j++)
+            {
+                temp.push_back(Basis_mat(i, j));
+            } 
+            Basis_vec.push_back(temp);
+            matplotlibcpp::plot(z_vec, Basis_vec[i]);
+        }
+        matplotlibcpp::show();
     }
 }
 

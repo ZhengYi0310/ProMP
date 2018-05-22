@@ -13,7 +13,7 @@
 #include <eigen3/Eigen/StdVector>
 #include <eigen3/Eigen/Geometry>
 
-typedef std::vector<Eigen::MatrixXd, Eigen::aligned_allocator<Eigen::MatrixXd> > MatrixVector;
+typedef std::vector<Eigen::ArrayXXd, Eigen::aligned_allocator<Eigen::ArrayXXd> > MatrixVector;
 
 namespace ProMP
 {
@@ -77,7 +77,7 @@ namespace ProMP
                 num_basis = num_basis_;
             }
 
-            inline void temoral_scaling(int scale)
+            inline void temporal_scaling(double scale)
             {
                 assert(scale > 0);
                 z_dot_ = z_dot_ * scale;
@@ -91,6 +91,11 @@ namespace ProMP
             inline bool can_execute()
             {
                 return execute_;
+            }
+
+            inline void get_phase_values(std::vector<double>& z_vecs)
+            {
+                z_vecs = z_vecs_;
             }
 
         private:
@@ -111,6 +116,7 @@ namespace ProMP
             double width_;     
 
             MatrixVector rollout_;
+            std::vector<double> z_vecs_;
     };
 }
 #endif

@@ -107,6 +107,7 @@ test/ProMP_cpp_test: test/CMakeFiles/ProMP_cpp_test.dir/Phase_test.cpp.o
 test/ProMP_cpp_test: test/CMakeFiles/ProMP_cpp_test.dir/ProMP_test_main.cpp.o
 test/ProMP_cpp_test: test/CMakeFiles/ProMP_cpp_test.dir/build.make
 test/ProMP_cpp_test: libProMP.so
+test/ProMP_cpp_test: /usr/lib/x86_64-linux-gnu/libpython2.7.so
 test/ProMP_cpp_test: test/CMakeFiles/ProMP_cpp_test.dir/link.txt
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --red --bold "Linking CXX executable ProMP_cpp_test"
 	cd /home/yzheng/PycharmProjects/ProMP/build/test && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/ProMP_cpp_test.dir/link.txt --verbose=$(VERBOSE)

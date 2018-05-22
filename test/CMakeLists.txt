@@ -3,7 +3,8 @@ include_directories(
     ${EIGEN3_INCLUDE_DIRS}
     )
 
-
+find_package(PythonLibs 2.7)
+include_directories(${PYTHON_INCLUDE_DIRS})
 
 set(ProMP_tests
     Phase_test.cpp
@@ -12,7 +13,7 @@ set(ProMP_tests
 
 
 add_executable (ProMP_cpp_test ${ProMP_tests})
-target_link_libraries(ProMP_cpp_test ProMP)
+target_link_libraries(ProMP_cpp_test ProMP ${PYTHON_LIBRARIES})
 
 enable_testing()
 add_test(ProMP_test ProMP_cpp_test)
