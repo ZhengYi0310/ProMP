@@ -140,9 +140,11 @@ TEST_CASE("The centers of the phase system are placed correctly.", "[Phase_Syste
         
     }
 }
+*/
 
 TEST_CASE("Phase system rolls out.", "[Phase_System]")
 {
+    /*
     SECTION("case 1")
     {
         double num_basis = 100;
@@ -176,16 +178,20 @@ TEST_CASE("Phase system rolls out.", "[Phase_System]")
         test_phase_sys.get_phase_values(z_vec);
         REQUIRE(z_vec.size() == 100);
     }
+    */
 
     SECTION("case 2")
     {
         double num_basis = 50;
+        double rollout_steps; 
         PhaseSystem test_phase_sys(500, num_basis, 0.02);
         test_phase_sys.init();
         test_phase_sys.rollout();
         std::vector<double> z_vec;
         test_phase_sys.get_phase_values(z_vec);
-        REQUIRE(z_vec.size() == 500);
+        REQUIRE(z_vec.size() == 501);
+        test_phase_sys.get_rollout_steps(rollout_steps);
+        REQUIRE(z_vec.size() == rollout_steps);
         MatrixVector rollout;
         test_phase_sys.get_rollout(rollout);
 
@@ -193,23 +199,29 @@ TEST_CASE("Phase system rolls out.", "[Phase_System]")
         test_phase_sys.reset();
         test_phase_sys.rollout();
         test_phase_sys.get_phase_values(z_vec);
-        REQUIRE(z_vec.size() == 1666);
+        REQUIRE(z_vec.size() == 1667);
+        test_phase_sys.get_rollout_steps(rollout_steps);
+        REQUIRE(z_vec.size() == rollout_steps);
 
         test_phase_sys.temporal_scaling(10);
         test_phase_sys.reset();
         test_phase_sys.rollout();
         test_phase_sys.get_phase_values(z_vec);
         REQUIRE(z_vec.size() == 167);
+        test_phase_sys.get_rollout_steps(rollout_steps);
+        REQUIRE(z_vec.size() == rollout_steps);
 
         test_phase_sys.temporal_scaling(1.0 / 3.0);
         test_phase_sys.reset();
         test_phase_sys.rollout();
         test_phase_sys.get_phase_values(z_vec);
-        REQUIRE(z_vec.size() == 500);
+        REQUIRE(z_vec.size() == 501);
+        test_phase_sys.get_rollout_steps(rollout_steps);
+        REQUIRE(z_vec.size() == rollout_steps);
     } 
 }
 
-*/
+
 TEST_CASE("results plotting", "[Phase_system]")
 {
     PhaseSystem test_phase_sys(100, 30, 0.04);
@@ -219,7 +231,7 @@ TEST_CASE("results plotting", "[Phase_system]")
     test_phase_sys.rollout();
 
     test_phase_sys.get_phase_values(z_vec);
-    REQUIRE(z_vec.size() == 100);
+    REQUIRE(z_vec.size() == 101);
     
     MatrixVector rollout;
     Eigen::VectorXd centers_vec;
@@ -240,12 +252,12 @@ TEST_CASE("results plotting", "[Phase_system]")
         }
     }
     */
-    
+    //cout << rollout_steps << " " << rollout.size() << endl; 
     SECTION("plot out the phase value")
     {
         Eigen::MatrixXd Basis_mat;
         std::vector<std::vector<double> > Basis_vec;
-        Basis_mat.resize(num_basis, rollout_steps);
+        Basis_mat.resize(num_basis, rollout.size());
 
 
         for (int i = 0; i < rollout.size(); i++)
@@ -269,7 +281,7 @@ TEST_CASE("results plotting", "[Phase_system]")
     
     SECTION("after rescaling")
     {
-        test_phase_sys.temporal_scaling(2.532);
+        test_phase_sys.temporal_scaling(0.25);
         test_phase_sys.reset();
         test_phase_sys.rollout();
         test_phase_sys.get_rollout_steps(rollout_steps);
@@ -278,8 +290,8 @@ TEST_CASE("results plotting", "[Phase_system]")
         test_phase_sys.get_centers(centers_vec);
         test_phase_sys.get_phase_values(z_vec);
 
-        //cout << z_vec.size() << endl;
-        //REQUIRE(z_vec.size() == rollout_steps);
+        cout << z_vec.size() << " " << rollout_steps << endl;
+        REQUIRE(z_vec.size() == rollout_steps);
         REQUIRE(rollout.size() == z_vec.size());
         
         REQUIRE(num_basis == 31);

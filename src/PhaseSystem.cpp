@@ -77,12 +77,14 @@ namespace ProMP
                            Eigen::Ref<Eigen::ArrayXd> phase_dot,
                            Eigen::Ref<Eigen::ArrayXd> phase_jerk)
     {
-        if (z_ < 1)
+        //cout << z_ << endl;
+        if (z_ <= (1 + 1e-10))
         {
             z_ = z_ + 1.0 / rollout_steps_;
         }
         else 
             z_ = z_;
+
 
         eval(phase);
         eval_d(phase_dot, phase);
@@ -128,7 +130,7 @@ namespace ProMP
 
         if (execute_ == true)
         {
-            while (z_ < 1.0)
+            while (z_ <= (1.0 + 1e-10))
             {
                 //cout << z_ << endl; 
                 step(phase_prealloc_, phase_dot_prealloc_, phase_jerk_prealloc_);
@@ -137,6 +139,7 @@ namespace ProMP
                 phase_terms_.col(2) = phase_jerk_prealloc_; 
                 rollout_.push_back(phase_terms_);
             }
+            rollout_steps_ += 1;
         }
         else 
             throw std::runtime_error("The phase system should not be rolling out right now!"); 
